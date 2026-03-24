@@ -1,0 +1,7 @@
+{
+  "name": "Sciatica Prognosis AI",
+  "description": "A multi-agent system for analyzing MRI images and clinical reports to provide sciatica prognosis and safety validation.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
