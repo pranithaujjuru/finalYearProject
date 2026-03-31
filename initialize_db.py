@@ -21,8 +21,8 @@ def initialize_guideline_db():
     # Convert to LangChain documents
     documents = [Document(page_content=text, metadata={"source": "Internal Clinical Guidelines"}) for text in guidelines]
     
-    # Initialize embeddings
-    embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
+    # Initialize embeddings with a local cache folder to avoid 429 rate-limits
+    embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2", cache_folder="./models/embeddings")
     
     # Create and persist the vector store
     vectorstore = Chroma.from_documents(

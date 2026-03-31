@@ -1,0 +1,5 @@
+{
+  "test_mri_01.png": {"finding": "L4-L5 Herniation", "severity": "moderate", "location": "L4-L5"},
+  "test_mri_02.jpg": {"finding": "L5-S1 Bulging", "severity": "mild", "location": "L5-S1"},
+  "test_mri_03.png": {"finding": "Severe Stenosis", "severity": "severe", "location": "L3-L4"}
+}

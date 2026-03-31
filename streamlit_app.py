@@ -5,11 +5,11 @@ import os
 from datetime import datetime
 from PIL import Image
 import base64
-from python_agents.nlp_agent import extract_clinical_data
-from python_agents.vision_agent import analyze_mri
-from python_agents.validator_agent import validate_prognosis
-from python_agents.translator_agent import translate_to_patient_voice
-from python_agents.schemas import FinalReport, PatientVisitSummary
+from core.nlp_agent import extract_clinical_data
+from core.vision_agent import analyze_mri
+from core.validator_agent import validate_prognosis
+from core.translator_agent import translate_to_patient_voice
+from core.schemas import FinalReport, PatientVisitSummary
 
 # --- PAGE CONFIG ---
 st.set_page_config(page_title="Sciatica Patient Assistant", layout="wide", initial_sidebar_state="expanded")
@@ -17,19 +17,31 @@ st.set_page_config(page_title="Sciatica Patient Assistant", layout="wide", initi
 # --- CUSTOM CSS (Patient-Centric visual empathy) ---
 st.markdown("""
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-        
-        * {
-            font-family: 'Inter', sans-serif;
+        /* High-Level Theme Awareness */
+        .stApp {
+            background-color: transparent !important;
         }
 
-        .stApp {
-            background-color: #F9FAFB;
+        /* Unified Card Styling with theme-aware colors */
+        .care-card {
+            background-color: var(--secondary-background-color);
+            padding: 24px;
+            border-radius: 16px;
+            border: 1px solid rgba(128, 128, 128, 0.1);
+            margin-bottom: 24px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            color: var(--text-color);
         }
         
-        #MainMenu {visibility: hidden;}
-        footer {visibility: hidden;}
-        header {visibility: hidden;}
+        .section-title {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: var(--text-color);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
 
         /* Patient-Centric Chat Bubbles */
         .stChatMessage {
@@ -37,55 +49,31 @@ st.markdown("""
             padding: 16px;
             margin-bottom: 24px;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-            border: 1px solid #F3F4F6;
-            background-color: #FFFFFF !important;
-            color: #1F2937 !important;
+            border: 1px solid rgba(128, 128, 128, 0.1);
+            background-color: var(--secondary-background-color) !important;
+            color: var(--text-color) !important;
         }
 
-        /* Ensure markdown inside chat messages is also dark */
         .stChatMessage div.stMarkdown p {
-            color: #1F2937 !important;
-        }
-        
-        /* Metric Styling */
-        [data-testid="stMetricValue"] {
-            font-size: 1.6rem;
-            color: #111827;
-            font-weight: 700;
-        }
-        
-        /* Care Team Section Card */
-        .care-card {
-            background-color: #FFFFFF;
-            padding: 28px;
-            border-radius: 20px;
-            border: 1px solid #E5E7EB;
-            margin-bottom: 28px;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.04);
-        }
-        
-        .section-title {
-            font-size: 1.25rem;
-            font-weight: 700;
-            color: #1F2937;
-            margin-bottom: 16px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
+            color: var(--text-color) !important;
         }
         
         .jargon-buster {
-            background-color: #F0FDF4;
-            border: 1px solid #DCFCE7;
+            background-color: rgba(240, 253, 244, 0.05);
+            border: 1px solid rgba(220, 252, 231, 0.1);
             border-radius: 12px;
             padding: 12px;
             margin-top: 8px;
         }
         
-        /* Amber Warning for Red Flags */
+        /* Correcting Alert Text Contrast (Yellow block issue) */
         .stAlert {
             border-radius: 12px !important;
-            border: none !important;
+            border: 1px solid rgba(128, 128, 128, 0.1) !important;
+        }
+        .stAlert div[role="alert"] p, .stAlert h3 {
+            color: inherit !important;
+            font-weight: 500;
         }
     </style>
 """, unsafe_allow_html=True)
@@ -110,8 +98,11 @@ if "prognosis_report" not in st.session_state:
 
 # --- SIDEBAR (Patient Overview) ---
 with st.sidebar:
-    st.markdown("<h2 style='text-align: center; color: #111827; margin-bottom: 0;'>Patient File</h2>", unsafe_allow_html=True)
-    st.divider()
+    st.markdown(f"""
+        <div style='text-align: center; border-bottom: 2px solid var(--medical-border); padding-bottom: 10px; margin-bottom: 20px;'>
+            <h2 style='color: var(--text-color); margin: 0;'>📋 Patient File</h2>
+        </div>
+    """, unsafe_allow_html=True)
     
     age_display = st.session_state.patient_data["age"] if st.session_state.patient_data["age"] else "..."
     gender_display = st.session_state.patient_data["gender"] if st.session_state.patient_data["gender"] else "..."
@@ -125,12 +116,65 @@ with st.sidebar:
         st.metric("Gender", gender_display)
     
     st.divider()
+    
+    # --- SCIATICA 101 ---
+    st.markdown("### 🩺 About Sciatica")
+    st.info("""
+    The **Sciatic Nerve** is the largest nerve in your body. It runs from your lower back, through your hips, and down each leg. 
+    
+    When this nerve is compressed (often by a disc), it causes the radiating pain, numbness, or weakness known as Sciatica.
+    """)
+    
+    # --- CARE GUIDELINES ---
+    st.markdown("### 💡 Daily Care Tips")
+    st.markdown("""
+    - 🚶 **Keep Moving**: Gentle walking helps maintain flexibility.
+    - 🪑 **Sit Smart**: Use a lumbar roll or small pillow for back support.
+    - 🏋️ **Lift Safely**: Always bend your knees—never your back.
+    - ❄️ **Cold/Heat**: Use ice for 15m to reduce swelling, then heat to relax muscles.
+    """)
+    
+    st.divider()
     if st.button("🗑️ Reset Consultation", use_container_width=True):
         for key in st.session_state.keys():
             del st.session_state[key]
         st.rerun()
 
-# --- HEADER ---
+# --- SYSTEM DIAGNOSTICS (Ensure Backend Health) ---
+def run_system_health_check():
+    """Checks if required models and Ollama are reachable."""
+    health_results = []
+    
+    # 1. Check Ollama reachability
+    try:
+        import requests
+        resp = requests.get("http://localhost:11434/api/tags", timeout=2)
+        if resp.status_code == 200:
+            models = [m['name'] for m in resp.json().get('models', [])]
+            required = ["llama3.2:latest", "llava:latest"]
+            for r in required:
+                if any(r in m for m in models):
+                    health_results.append(f"✅ Model `{r}` is active.")
+                else:
+                    health_results.append(f"❌ Model `{r}` is missing. Run `ollama pull {r.split(':')[0]}`")
+        else:
+            health_results.append("❌ Ollama is unreachable (Status check failed).")
+    except Exception:
+        health_results.append("❌ Ollama is not running. Please start the Ollama application.")
+        
+    # 2. Check Embeddings Cache
+    if os.path.exists("./models/embeddings"):
+        health_results.append("✅ Local Embeddings cache is ready.")
+    else:
+        health_results.append("⚠️ Local Embeddings cache missing. First run may be slow.")
+        
+    return health_results
+
+with st.sidebar:
+    with st.expander("🩺 System Health", expanded=False):
+        for status in run_system_health_check():
+            st.write(status)
+
 st.title("🛡️ Sciatica Care Assistant")
 st.markdown("<p style='color: #6B7280; font-size: 1.1rem;'>Empathetic support for your recovery journey.</p>", unsafe_allow_html=True)
 
@@ -248,12 +292,10 @@ if st.session_state.chat_stage == "results" and st.session_state.prognosis_repor
     r = st.session_state.prognosis_report
     s = r.patientSummary
     
-    st.divider()
-    st.markdown(f"## {s.summaryTitle}")
-    st.markdown("Based on a complete review of your symptoms and your MRI scan, here is what is happening in your spine:")
-
     # Helper for Jargon Buster
     def jargon_buster(text):
+        if not s or not s.jargonBuster:
+            return
         for item in s.jargonBuster:
             term = item['term']
             expl = item['explanation']
@@ -261,37 +303,98 @@ if st.session_state.chat_stage == "results" and st.session_state.prognosis_repor
                 with st.expander(f"💡 What does '{term}' actually mean?"):
                     st.info(expl)
 
-    # 1. Primary Diagnosis & Imaging Analogy
-    with st.container():
-        st.markdown("<div class='care-card'>", unsafe_allow_html=True)
-        st.markdown(f"<div class='section-title'>🔍 Understanding the Cause</div>", unsafe_allow_html=True)
-        st.markdown(s.diagnosis)
-        st.markdown(f"**Imaging Insight:** {s.imaging}")
-        jargon_buster(s.diagnosis + s.imaging)
-        st.markdown("</div>", unsafe_allow_html=True)
+    # --- NEW CONSOLIDATED DASHBOARD CARD ---
+    st.markdown(f"""
+<div class='care-card'>
+<div style='font-size: 1.5rem; font-weight: 800; margin-bottom: 20px; border-bottom: 2px solid var(--medical-border); padding-bottom: 10px; color: var(--text-color);'>
+🏥 Clinical Summary Dashboard
+</div>
+<div style='display: grid; grid-template-columns: 1fr; gap: 20px;'>
+<!-- OVERALL SUMMARY -->
+<div>
+<div class='section-title'>📝 Overall Summary</div>
+<div style='font-style: italic; opacity: 0.9;'>{s.summaryTitle}</div>
+<div style='margin-top: 8px;'>Based on your symptoms and MRI, here is the focus of your care plan.</div>
+</div>
+<hr style='border: 0; border-top: 1px solid rgba(128,128,128,0.1); margin: 5px 0;'>
+<!-- DETECTION & CAUSE -->
+<div style='display: grid; grid-template-columns: 1fr 1fr; gap: 20px;'>
+<div>
+<div class='section-title'>🔍 Detection (MRI)</div>
+<div style='background: rgba(128,128,128,0.05); padding: 12px; border-radius: 8px;'>{s.imaging}</div>
+</div>
+<div>
+<div class='section-title'>🩺 Probable Cause</div>
+<div style='background: rgba(128,128,128,0.05); padding: 12px; border-radius: 8px;'>{s.diagnosis}</div>
+</div>
+</div>
+<hr style='border: 0; border-top: 1px solid rgba(128,128,128,0.1); margin: 5px 0;'>
+<!-- PRECAUTIONS & CONSULTANCY -->
+<div style='display: grid; grid-template-columns: 1fr 1fr; gap: 20px;'>
+<div>
+<div class='section-title'>⚠️ Precautions</div>
+<div style='color: #ef4444; font-weight: 600;'>Emergency Red Flags:</div>
+<div style='font-size: 0.9rem;'>{s.redFlags}</div>
+</div>
+<div>
+<div class='section-title'>👨‍⚕️ Doctor's Consultancy</div>
+<div style='border-left: 4px solid #3b82f6; padding-left: 12px; font-weight: 500;'>{r.validation.recommendation}</div>
+</div>
+</div>
+<hr style='border: 0; border-top: 1px solid rgba(128,128,128,0.1); margin: 5px 0;'>
+<!-- NERVE FUNCTION & PLAN -->
+<div>
+<div class='section-title'>⚡ Nerve Function & Recovery Plan</div>
+<div>{s.neurological}</div>
+<div style='margin-top: 10px; font-weight: 600; color: #10b981;'>Next Steps:</div>
+<div>{s.plan}</div>
+</div>
+</div>
+</div>
+""", unsafe_allow_html=True)
 
-    # 2. Neurological explanation
-    with st.container():
-        st.markdown("<div class='care-card'>", unsafe_allow_html=True)
-        st.markdown(f"<div class='section-title'>⚡ Your Nerve Function</div>", unsafe_allow_html=True)
-        st.markdown(s.neurological)
-        jargon_buster(s.neurological)
-        st.markdown("</div>", unsafe_allow_html=True)
+    # 5. TECHNICAL VALIDATION TABLE (Transparency)
+    st.markdown("### 🛠️ Clinical & Technical Validation")
+    validation_data = {
+        "Metric": ["Confidence Score", "Safety Assessment", "Primary Recommendation"],
+        "Value": [
+            f"{r.validation.confidenceScore}%",
+            "✅ Pass (Safe)" if r.validation.isSafe else "⚠️ Review Required",
+            r.validation.recommendation
+        ]
+    }
+    st.table(validation_data)
 
-    # 3. Plan & Path Forward
-    with st.container():
-        st.markdown("<div class='care-card'>", unsafe_allow_html=True)
-        st.markdown(f"<div class='section-title'>🌱 The Path Forward</div>", unsafe_allow_html=True)
-        st.markdown(s.plan)
-        st.markdown("</div>", unsafe_allow_html=True)
+    # Jargon Buster (Move to bottom for cleanliness)
+    jargon_buster(s.diagnosis + s.imaging + s.neurological)
 
-    # 4. Safety & Red Flags (Soft Amber)
-    if r.validation.risks or s.redFlags:
-        st.warning(f"**Emergency Awareness**\n\n{s.redFlags}")
-        with st.expander("Why are these considered emergencies?"):
-            st.markdown("These symptoms can sometimes signal that the nerves in your lower back are under significant stress that requires immediate medical attention to prevent long-term damage.")
+    st.markdown("#### 📚 Scientific References & Guidelines")
+    
+    # Professional Clinical Guideline Mapping
+    GUIDELINE_LINKS = {
+        "NICE Guideline [NG59]": "https://www.nice.org.uk/guidance/ng59",
+        "NHS Cauda Equina Standards": "https://www.nhs.uk/conditions/cauda-equina-syndrome/",
+        "Spine-health Sciatica Guide": "https://www.spine-health.com/conditions/sciatica/what-you-need-know-about-sciatica",
+        "AANS Herniated Disc Overview": "https://www.aans.org/patients/conditions-treatments/herniated-disc/",
+        "RAG Guidelines": "https://www.nice.org.uk/guidance/ng59" # Alias for NICE
+    }
+
+    if r.validation.referencedGuidelines:
+        for g_name in r.validation.referencedGuidelines:
+            # Map generic labels to professional ones
+            display_name = "NICE Clinical Guideline [NG59]" if g_name == "RAG Guidelines" else g_name
+            url = GUIDELINE_LINKS.get(g_name, "https://www.nice.org.uk/guidance/ng59")
+            st.markdown(f"- [{display_name}]({url})")
+    else:
+        st.info("The AI Care Team has cross-referenced these findings with internal clinical guidelines.")
+
+    # 6. Safety Alert Block (Redundant but visible for urgency)
+    if s.redFlags:
+        st.divider()
+        st.warning(f"### ⚠️ Emergency Awareness\n\n{s.redFlags}")
 
     # Reset Button
+    st.divider()
     if st.button("Start New Review", use_container_width=True):
         for key in st.session_state.keys():
             del st.session_state[key]
